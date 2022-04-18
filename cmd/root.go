@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	path   string = "."
-	web    bool   = false
-	listen string = "localhost:7788"
+	path    string = "."
+	web     bool   = false
+	listen  string = "localhost:7788"
+	showStd bool   = false
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -27,16 +28,17 @@ var rootCmd = &cobra.Command{
 godepgraph
 godepgraph --path=./myapp/
 godepgraph --path=./myapp/ --web
+godepgraph --path=./myapp/ --std
 godepgraph --path=./myapp/ --web --listen=:7788`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		if web {
-			if err := app.Serve(path, listen); err != nil {
+			if err := app.Serve(path, listen, showStd); err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			if err := app.Imports(path); err != nil {
+			if err := app.ShowImports(path, showStd); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -64,4 +66,5 @@ func init() {
 	rootCmd.Flags().StringVar(&path, "path", ".", "local path of packages")
 	rootCmd.Flags().BoolVar(&web, "web", false, "serve a web server and show the depgraph in the webpage")
 	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server, default localhost:7788")
+	rootCmd.Flags().BoolVar(&showStd, "std", false, "is show std lib, default false")
 }

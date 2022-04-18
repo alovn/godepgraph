@@ -7,13 +7,13 @@ import (
 	"os"
 )
 
-func Serve(root string, addr string) error {
+func Serve(root string, addr string, showStdLib bool) error {
 	mux := http.DefaultServeMux
-	mux.HandleFunc("/graph", graphHandler(root))
+	mux.HandleFunc("/graph", graphHandler(root, showStdLib))
 	return http.ListenAndServe(addr, mux)
 }
 
-func graphHandler(root string) http.HandlerFunc {
+func graphHandler(root string, showStdLib bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if root == "" {
 			cwd, err := os.Getwd()
@@ -22,7 +22,6 @@ func graphHandler(root string) http.HandlerFunc {
 			}
 			root = cwd
 		}
-		var showStdLib bool = false
 		module, err := ReadGoModule(root)
 		if err != nil {
 			return

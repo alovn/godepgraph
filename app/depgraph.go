@@ -24,35 +24,6 @@ const (
 	PkgTypeThirdModule
 )
 
-func Imports(root string) error {
-	if root == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		root = cwd
-	}
-	// root = "/Users/alovn/workspace/github/gostack-labs/bytego"
-	module, err := ReadGoModule(root)
-	if err != nil {
-		return err
-	}
-	pkgMap := make(map[string]map[string]PkgTypeInfo)
-	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
-		return err
-	}
-
-	for k, v := range pkgMap {
-		fmt.Println(k)
-		if len(v) > 0 {
-			for k2 := range v {
-				fmt.Println("  ", k2)
-			}
-		}
-	}
-	return nil
-}
-
 func ReadDirImportPkgs(rootPath, parentDirPath, module string, pkgMap PkgMap) error {
 	dirPath := filepath.Join(rootPath, parentDirPath)
 	dirs, err := os.ReadDir(dirPath)
