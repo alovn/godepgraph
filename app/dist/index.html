@@ -31,10 +31,15 @@
     <div id="btnWrap">
         <span>显示标准库</span>
     </div>
-    <script src="https://unpkg.com/d3@7.4.4/dist/d3.min.js"></script>
+    <!-- <script src="https://unpkg.com/d3@7.4.4/dist/d3.min.js"></script>
     <script src="https://unpkg.com/@hpcc-js/wasm/dist/index.min.js" type="javascript/worker"></script>
     <script src="https://unpkg.com/d3-graphviz@4.1.1/build/d3-graphviz.js"></script>
-    <script src="https://unpkg.com/jquery@3.6.0/dist/jquery.js"></script>
+    <script src="https://unpkg.com/jquery@3.6.0/dist/jquery.js"></script> -->
+
+    <script src="js/d3.min.js"></script>
+    <script src="js/wasm.min.js" type="javascript/worker"></script>
+    <script src="js/d3-graphviz.js"></script>
+    <script src="js/jquery.js"></script>
     <script>
         function load(showStdLib) {
             $.get("/graph?std="+showStdLib).then(function(res){
