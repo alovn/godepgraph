@@ -13,10 +13,9 @@ import (
 )
 
 var (
-	path  string = "."
-	web   bool   = false
-	port  int    = 7788
-	depth int    = 5
+	path   string = "."
+	web    bool   = false
+	listen string = "localhost:7788"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -28,12 +27,14 @@ var rootCmd = &cobra.Command{
 godepgraph
 godepgraph --path=./myapp/
 godepgraph --path=./myapp/ --web
-godepgraph --path=./myapp/ --web --port=7788`,
+godepgraph --path=./myapp/ --web --listen=:7788`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		if web {
-
+			if err := app.Serve(path, listen); err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			if err := app.Imports(path); err != nil {
 				log.Fatal(err)
@@ -62,6 +63,5 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().StringVar(&path, "path", ".", "local path of packages")
 	rootCmd.Flags().BoolVar(&web, "web", false, "serve a web server and show the depgraph in the webpage")
-	rootCmd.Flags().IntVar(&port, "port", 7788, "port of web server, default 7788")
-	rootCmd.Flags().IntVar(&depth, "depth", 5, "max depth, default 5")
+	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server, default localhost:7788")
 }

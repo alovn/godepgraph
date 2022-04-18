@@ -11,11 +11,18 @@ import (
 	"strings"
 )
 
-var (
-	pkgMap = make(map[string][]string)
-)
+type PkgMap map[string]map[string]PkgTypeInfo
+type PkgTypeInfo struct {
+	IsRoot  bool
+	PkgType PkgType
+}
+type PkgType int
 
-type PkgMap map[string]map[string]string
+const (
+	PkgTypeStandard PkgType = iota
+	PkgTypeCurrentModule
+	PkgTypeThirdModule
+)
 
 func Imports(root string) error {
 	if root == "" {
@@ -26,13 +33,12 @@ func Imports(root string) error {
 		root = cwd
 	}
 	// root = "/Users/alovn/workspace/github/gostack-labs/bytego"
-	// module, err := ReadGoModule(root)
-	// if err != nil {
-	// 	return err
-	// }
-	// log.Println(module)
-	pkgMap := make(map[string]map[string]string)
-	if err := ReadDirImportPkgs(root, "", pkgMap); err != nil {
+	module, err := ReadGoModule(root)
+	if err != nil {
+		return err
+	}
+	pkgMap := make(map[string]map[string]PkgTypeInfo)
+	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
 		return err
 	}
 
@@ -47,7 +53,7 @@ func Imports(root string) error {
 	return nil
 }
 
-func ReadDirImportPkgs(rootPath string, parentDirPath string, pkgMap PkgMap) error {
+func ReadDirImportPkgs(rootPath, parentDirPath, module string, pkgMap PkgMap) error {
 	dirPath := filepath.Join(rootPath, parentDirPath)
 	dirs, err := os.ReadDir(dirPath)
 	if err != nil {
@@ -72,26 +78,24 @@ func ReadDirImportPkgs(rootPath string, parentDirPath string, pkgMap PkgMap) err
 		}
 	}
 	if len(goFiles) > 0 {
-		if err := ReadGoFilesImportPkgs(rootPath, parentDirPath, goFiles, pkgMap); err != nil {
+		if err := ReadGoFilesImportPkgs(rootPath, parentDirPath, module, goFiles, pkgMap); err != nil {
 			return err
 		}
 	}
 	for _, subDir := range subDirs {
 		subDirPath := filepath.Join(parentDirPath, subDir)
-		if err := ReadDirImportPkgs(rootPath, subDirPath, pkgMap); err != nil {
+		if err := ReadDirImportPkgs(rootPath, subDirPath, module, pkgMap); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func ReadGoFilesImportPkgs(rootPath string, parentDirPath string, goFiles []string, pkgMap PkgMap) error {
+func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []string, pkgMap PkgMap) error {
 	if len(goFiles) == 0 {
 		return nil
 	}
-	// var pkgName string
 	for _, file := range goFiles {
-		// pkgName = file
 		bs, err := os.ReadFile(file)
 		if err != nil {
 			return err
@@ -102,23 +106,58 @@ func ReadGoFilesImportPkgs(rootPath string, parentDirPath string, goFiles []stri
 
 		content := string(bs)
 		pkgName, imports, err := parseImports(content)
-		fullPkgName := parentDirPath
-		if !strings.HasSuffix(parentDirPath, pkgName) {
-			fullPkgName = filepath.Join(parentDirPath, pkgName)
-		}
 		if err != nil {
 			return err
 		}
-		if pkgImports, ok := pkgMap[fullPkgName]; ok {
-			for _, imp := range imports {
-				pkgImports[imp] = ""
-			}
+
+		var fullPkgName string
+		if parentDirPath == "" {
+			fullPkgName = "/"
 		} else {
-			pkgImports := make(map[string]string)
-			for _, imp := range imports {
-				pkgImports[imp] = ""
+			if !strings.HasSuffix(parentDirPath, pkgName) { //pkg name not equals directory name
+				fullPkgName = "/" + parentDirPath + "/" + pkgName
+			} else {
+				fullPkgName = "/" + parentDirPath
 			}
-			pkgMap[fullPkgName] = pkgImports
+		}
+
+		for _, imp := range imports {
+			var pkgType PkgType
+			isRoot := imp == fmt.Sprintf("\"%s\"", filepath.Base(module)) || imp == fmt.Sprintf("\"%s\"", module)
+			isCurrentModule := isRoot || strings.HasPrefix(imp, "\""+module)
+			if isCurrentModule {
+				if isRoot {
+					imp = `"/"`
+				} else {
+					imp = strings.Replace(imp, module, "", 1)
+				}
+				if imp == `""` {
+					fmt.Println("---------")
+					panic("dd")
+				}
+				pkgType = PkgTypeCurrentModule
+
+			} else {
+				isThirdModule := strings.Contains(imp, ".")
+				if isThirdModule {
+					pkgType = PkgTypeThirdModule
+				} else {
+					pkgType = PkgTypeStandard
+				}
+			}
+			if pkgImports, ok := pkgMap[fullPkgName]; ok {
+				pkgImports[imp] = PkgTypeInfo{
+					IsRoot:  isRoot,
+					PkgType: pkgType,
+				}
+			} else {
+				pkgImports := make(map[string]PkgTypeInfo)
+				pkgImports[imp] = PkgTypeInfo{
+					IsRoot:  isRoot,
+					PkgType: pkgType,
+				}
+				pkgMap[fullPkgName] = pkgImports
+			}
 		}
 	}
 	return nil
@@ -154,7 +193,7 @@ func ReadGoModule(root string) (string, error) {
 
 		if strings.HasPrefix(line, "module") {
 			// module := strings.TrimLeft(line, "module")
-			module := strings.Trim(strings.TrimPrefix(line, "module"), " ")
+			module := strings.TrimSpace(strings.TrimPrefix(line, "module"))
 			return module, nil
 		}
 	}
