@@ -18,7 +18,12 @@ func Serve(root string, addr string, showStdLib bool) error {
 
 func graphHandler(root string, showStdLib bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := OutputGraphFormat(w, root, showStdLib); err != nil {
+		showStd := showStdLib
+		query := r.URL.Query().Get("std")
+		if query != "" {
+			showStd = query == "true"
+		}
+		if err := OutputGraphFormat(w, root, showStd); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 		}

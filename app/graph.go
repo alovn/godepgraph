@@ -33,7 +33,7 @@ edge [arrowsize="0.8"]
 `)
 
 	for pkgName, depPkgs := range pkgMap {
-		fmt.Fprintf(&b, "\"%s\" [label=\"%s\" color=\"green\" URL=\"https://pkg.go.dev/%s\" target=\"_blank\"];\n",
+		fmt.Fprintf(&b, "\"%s\" [label=\"%s\" color=\"#6BDDFE\" URL=\"https://pkg.go.dev/%s\" target=\"_blank\"];\n",
 			pkgName,
 			pkgName,
 			module,
