@@ -101,7 +101,7 @@ func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []str
 				if isRoot {
 					imp = fmt.Sprintf(`"%s"`, basePkgName)
 				} else {
-					imp = strings.Replace(imp, module, "", 1)
+					imp = strings.Replace(imp, module, basePkgName, 1)
 				}
 				pkgType = PkgTypeCurrentModule
 

@@ -11,6 +11,7 @@
             width: 100%;
             height: 100%;
             text-align: center;
+            margin-top: 8px;
         }
         #btnWrap{
             position: fixed;
@@ -24,12 +25,38 @@
         #btnWrap span.checked{
             color: blue;
         }
+        #inputWrap{
+            margin:0 auto;
+            width:500px;
+            height:30px;
+            line-height: 30px;
+            text-align: center;
+        }
+        #inputWrap input {
+            text-align: center;
+            width: 400px;
+            height:30px;
+            line-height: 30px;
+            color: gray;
+        }
+        #inputWrap button{
+            height: 30px;
+            line-height: 26px;
+            vertical-align: middle;
+        }
+        .node{
+            cursor:pointer;
+        }
     </style>
 </head>
 <body>
+    <div id="inputWrap">
+        <input type="text" />
+        <button type="button">rest</button>
+    </div>
     <div id="graph"></div>
     <div id="btnWrap">
-        <span>显示标准库</span>
+        <span>Show Std Library</span>
     </div>
     <!-- <script src="https://unpkg.com/d3@7.4.4/dist/d3.min.js"></script>
     <script src="https://unpkg.com/@hpcc-js/wasm/dist/index.min.js" type="javascript/worker"></script>
@@ -41,12 +68,12 @@
     <script src="js/d3-graphviz.js"></script>
     <script src="js/jquery.js"></script>
     <script>
-        function load(showStdLib) {
-            $.get("/graph?std="+showStdLib).then(function(res){
+        function loadData(showStdLib, pkg, callback) {
+            $.get("/graph?std="+showStdLib+"&pkg="+pkg).then(function(res, textStatus, jqXHR){
                 d3.select("#graph")
                     .graphviz({
-                        width: window.innerWidth-10,
-                        height: window.innerHeight-20,
+                        width: window.innerWidth-30,
+                        height: window.innerHeight-50,
                         fit: true,
                     })
                     .transition(function () {
@@ -56,28 +83,69 @@
                             .duration(300);
                     })
                     .dot(res)
-                    .render();
-                    setTimeout(function(){
-                        var $btn = $('#btnWrap span');
-                        $btn.data('checked', showStdLib);
-                        if(showStdLib) {
-                            $btn.addClass("checked").text("隐藏标准库");
-                        } else {
-                            $btn.removeClass("checked").text("显示标准库");;
-                        }
-                    },100);
+                    .render()
+                    .on("end", interactive);;
+
+                    if(callback) {
+                        callback()
+                    }
+                    //init
+                    var pkg = jqXHR.getResponseHeader("X-Pkg")
+                    var $input = $('#inputWrap input');
+                    var inputValue = $input.val();
+                    if(!inputValue && pkg) {
+                        $input.val(pkg)
+                    }
                     
             }).fail(function(err){
                 console.log(err.responseText)
                 alert(err.responseText);
             })
         }
+        function interactive(){
+            var nodes = d3.selectAll('.node');
+            nodes.on("click", function(){
+                var pkg = d3.select(this).selectAll('text').text();
+                $('#inputWrap input').val(pkg);
+                var checked = $('#btnWrap span').data('checked');
+                loadData(checked, pkg, null);
+            });
+        }
+        function switchStdLibBtn(){
+            setTimeout(function(){
+                var $btn = $('#btnWrap span');
+                var old = $btn.data('checked');
+                var showStdLib = !old;
+                $btn.data('checked', showStdLib);
+                if(showStdLib) {
+                    $btn.addClass("checked").text("Hide Std Library");
+                } else {
+                    $btn.removeClass("checked").text("Show Std Library");;
+                }
+            },100);
+        }
+        
         $(function(){
+            $('#inputWrap input').keypress(function(event){
+                if(event.keyCode == 13) {
+                    var checked = $('#btnWrap span').data('checked');
+                    var pkg = $(this).val();
+                    loadData(!!checked, pkg, null);
+                }
+            });
+            //reset
+            $('#inputWrap button').click(function(){
+                $('#inputWrap input').val('');
+                var checked = $('#btnWrap span').data('checked');
+                loadData(!!checked, '', null);
+            });
             $('#btnWrap span').click(function(){
                 var checked = $(this).data('checked');
-                load(!checked);
+                var pkg = $('#inputWrap input').val();
+                loadData(!checked, pkg, switchStdLibBtn);
             });
-            load(false)
+            $('#inputWrap input').focus();
+            loadData(false, "", null)
         });
     </script>
 </body>

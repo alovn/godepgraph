@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func OutputGraphFormat(w io.Writer, root string, showStdLib bool) error {
+func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -33,10 +33,12 @@ edge [arrowsize="0.8"]
 `)
 
 	for pkgName, depPkgs := range pkgMap {
-		fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\" URL=\"https://pkg.go.dev/%s\" target=\"_blank\"];\n",
+		if showPkgName != "" && pkgName != showPkgName {
+			continue
+		}
+		fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\"];\n",
 			pkgName,
 			pkgName,
-			module,
 		)
 		if len(depPkgs) > 0 {
 			for depPkg, depPkgType := range depPkgs {

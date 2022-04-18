@@ -13,6 +13,7 @@ import (
 
 var (
 	path    string = "."
+	pkg     string = ""
 	web     bool   = false
 	listen  string = "localhost:7788"
 	showStd bool   = false
@@ -30,18 +31,19 @@ godepgraph --path=./myapp/
 godepgraph --path=./myapp/ --std
 godepgraph --path=./myapp/ --dot
 godepgraph --path=./myapp/ --web
+godepgraph --path=./myapp/ --web --pkg=bytego
 godepgraph --path=./myapp/ --web --listen=:7788`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if web {
-			if err := app.Serve(path, listen, showStd); err != nil {
+			if err := app.Serve(path, listen, pkg, showStd); err != nil {
 				log.Fatal(err)
 			}
 		} else {
 			if dot {
-				if err := app.ShowImportsWithGraphviz(path, showStd); err != nil {
+				if err := app.ShowImportsWithGraphviz(path, pkg, showStd); err != nil {
 					log.Fatal(err)
 				}
-			} else if err := app.ShowImports(path, showStd); err != nil {
+			} else if err := app.ShowImports(path, pkg, showStd); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -58,7 +60,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVar(&path, "path", ".", "local path of packages")
+	rootCmd.Flags().StringVar(&path, "path", ".", "the local path of packages")
+	rootCmd.Flags().StringVar(&pkg, "pkg", "", "the go package namge")
 	rootCmd.Flags().BoolVar(&web, "web", false, "serve a web server and show the depgraph in the webpage")
 	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server, default localhost:7788")
 	rootCmd.Flags().BoolVar(&showStd, "std", false, "is show std lib, default false")
