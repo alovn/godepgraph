@@ -80,15 +80,16 @@ func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []str
 		if err != nil {
 			return err
 		}
+		basePkgName := filepath.Base(module)
 
 		var fullPkgName string
 		if parentDirPath == "" {
-			fullPkgName = "/"
+			fullPkgName = basePkgName
 		} else {
 			if !strings.HasSuffix(parentDirPath, pkgName) { //pkg name not equals directory name
-				fullPkgName = "/" + parentDirPath + "/" + pkgName
+				fullPkgName = basePkgName + "/" + parentDirPath + "/" + pkgName
 			} else {
-				fullPkgName = "/" + parentDirPath
+				fullPkgName = basePkgName + "/" + parentDirPath
 			}
 		}
 
@@ -98,7 +99,7 @@ func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []str
 			isCurrentModule := isRoot || strings.HasPrefix(imp, "\""+module)
 			if isCurrentModule {
 				if isRoot {
-					imp = `"/"`
+					imp = fmt.Sprintf(`"%s"`, basePkgName)
 				} else {
 					imp = strings.Replace(imp, module, "", 1)
 				}
