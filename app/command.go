@@ -16,10 +16,12 @@ func ShowImports(root string, showStdLib bool) error {
 		}
 		root = cwd
 	}
-	// root = "/Users/alovn/workspace/github/gostack-labs/bytego"
 	module, err := ReadGoModule(root)
 	if err != nil {
 		return err
+	}
+	if module == "" {
+		return errors.New("error: the path must be a go module directory.")
 	}
 	pkgMap := make(map[string]map[string]PkgTypeInfo)
 	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
@@ -48,10 +50,12 @@ func ShowImportsWithGraphviz(root string, showStdLib bool) error {
 		}
 		root = cwd
 	}
-	// root = "/Users/alovn/workspace/github/gostack-labs/bytego"
 	module, err := ReadGoModule(root)
 	if err != nil {
 		return err
+	}
+	if module == "" {
+		return errors.New("error: the path must be a go module directory.")
 	}
 	pkgMap := make(map[string]map[string]PkgTypeInfo)
 	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
