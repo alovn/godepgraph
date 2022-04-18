@@ -102,10 +102,6 @@ func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []str
 				} else {
 					imp = strings.Replace(imp, module, "", 1)
 				}
-				if imp == `""` {
-					fmt.Println("---------")
-					panic("dd")
-				}
 				pkgType = PkgTypeCurrentModule
 
 			} else {

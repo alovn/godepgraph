@@ -17,6 +17,7 @@ var (
 	web     bool   = false
 	listen  string = "localhost:7788"
 	showStd bool   = false
+	dot     bool   = false
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -27,8 +28,9 @@ var rootCmd = &cobra.Command{
 
 godepgraph
 godepgraph --path=./myapp/
-godepgraph --path=./myapp/ --web
 godepgraph --path=./myapp/ --std
+godepgraph --path=./myapp/ --dot
+godepgraph --path=./myapp/ --web
 godepgraph --path=./myapp/ --web --listen=:7788`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -38,7 +40,11 @@ godepgraph --path=./myapp/ --web --listen=:7788`,
 				log.Fatal(err)
 			}
 		} else {
-			if err := app.ShowImports(path, showStd); err != nil {
+			if dot {
+				if err := app.ShowImportsWithGraphviz(path, showStd); err != nil {
+					log.Fatal(err)
+				}
+			} else if err := app.ShowImports(path, showStd); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -67,4 +73,5 @@ func init() {
 	rootCmd.Flags().BoolVar(&web, "web", false, "serve a web server and show the depgraph in the webpage")
 	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server, default localhost:7788")
 	rootCmd.Flags().BoolVar(&showStd, "std", false, "is show std lib, default false")
+	rootCmd.Flags().BoolVar(&dot, "dot", false, "generate a picture using graphviz, default false")
 }
