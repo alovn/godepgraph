@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+var (
+	cache PkgMap
+)
+
 func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
@@ -19,15 +23,24 @@ func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib bool) e
 	if err != nil {
 		return err
 	}
-	pkgMap := make(map[string]map[string]PkgTypeInfo)
-	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
-		return err
+
+	//read cache first
+	var pkgMap PkgMap
+	if cache == nil {
+		pkgMap = make(PkgMap)
+		if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
+			return err
+		}
+		cache = pkgMap
+	} else {
+		pkgMap = cache
 	}
+
 	var b bytes.Buffer
 	fmt.Fprint(&b, `digraph godepgraph {
 splines=curved
-nodesep=0.5
-ranksep=1.2
+nodesep=0.8
+ranksep=3
 node [shape="box",style="rounded,filled"]
 edge [arrowsize="0.8"]
 `)

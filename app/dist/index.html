@@ -26,7 +26,10 @@
             color: blue;
         }
         #inputWrap{
-            margin:0 auto;
+            position:fixed;
+            top: 5px;;
+            left:50%;
+            margin-left: -250px;
             width:500px;
             height:30px;
             line-height: 30px;
@@ -73,8 +76,9 @@
                 d3.select("#graph")
                     .graphviz({
                         width: window.innerWidth-30,
-                        height: window.innerHeight-50,
-                        fit: true,
+                        height: window.innerHeight-30,
+                        fit: false,
+                        zoom: true,
                     })
                     .transition(function () {
                         return d3.transition("main")

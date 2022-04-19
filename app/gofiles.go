@@ -32,10 +32,13 @@ func ReadDirImportPkgs(rootPath, parentDirPath, module string, pkgMap PkgMap) er
 	var subDirs []string
 	var goFiles []string
 	for _, dir := range dirs {
-		if strings.HasPrefix(dir.Name(), ".") {
+		if strings.HasPrefix(dir.Name(), ".") { //ignore
 			continue
 		}
 		if dir.IsDir() {
+			if dir.Name() == "vendor" { //ignore vendor
+				continue
+			}
 			subDirs = append(subDirs, dir.Name())
 		} else {
 			if filepath.Ext(dir.Name()) != ".go" {
