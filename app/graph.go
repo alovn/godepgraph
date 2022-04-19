@@ -40,7 +40,7 @@ func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib bool) e
 	fmt.Fprint(&b, `digraph godepgraph {
 splines=curved
 nodesep=0.8
-ranksep=3
+ranksep=5
 node [shape="box",style="rounded,filled"]
 edge [arrowsize="0.8"]
 `)
