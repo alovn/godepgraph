@@ -44,7 +44,7 @@
             line-height: 26px;
             vertical-align: middle;
         }
-        .node{
+        .node_module{
             cursor:pointer;
         }
     </style>
@@ -103,12 +103,12 @@
             })
         }
         function interactive(){
-            var nodes = d3.selectAll('.node');
+            var nodes = d3.selectAll('.node_module');
             nodes.on("click", function(){
                 var pkg = d3.select(this).selectAll('text').text();
                 $('#inputWrap input').val(pkg);
                 var checked = $('#btnWrap span').data('checked');
-                loadData(checked, pkg, null);
+                loadData(!!checked, pkg, null);
             });
         }
         function switchStdLibBtn(){

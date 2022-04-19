@@ -23,16 +23,15 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "godepgraph",
-	Short: "Go packages dependence graph",
-	Long: `godepgraph is a tools for Go that show dependence graph:
+	Short: "Go packages dependence packages graph",
+	Long: `godepgraph is a tools for Go that dependence packages show with graph:
 
 godepgraph
-godepgraph --path=./myapp/
-godepgraph --path=./myapp/ --std
-godepgraph --path=./myapp/ --dot
-godepgraph --path=./myapp/ --web
-godepgraph --path=./myapp/ --web --pkg=bytego
-godepgraph --path=./myapp/ --web --listen=:7788`,
+godepgraph --web
+godepgraph --std
+godepgraph --dot
+godepgraph --web --pkg=bytego
+godepgraph --path=./myapp/ --pkg=bytego --web --listen=:7788`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if web {
 			if err := app.Serve(path, listen, pkg, showStd); err != nil {
@@ -62,7 +61,7 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringVar(&path, "path", ".", "the local path of packages")
 	rootCmd.Flags().StringVar(&pkg, "pkg", "", "the go package namge")
-	rootCmd.Flags().BoolVar(&web, "web", false, "serve a web server and show the depgraph in the webpage")
+	rootCmd.Flags().BoolVar(&web, "web", false, "serve a local web server and show the depgraph in the webpage")
 	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server, default localhost:7788")
 	rootCmd.Flags().BoolVar(&showStd, "std", false, "is show std lib, default false")
 	rootCmd.Flags().BoolVar(&dot, "dot", false, "generate a picture using graphviz, default false")

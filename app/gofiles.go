@@ -2,7 +2,6 @@ package app
 
 import (
 	"bufio"
-	"fmt"
 	"go/parser"
 	"go/token"
 	"io"
@@ -95,11 +94,11 @@ func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []str
 
 		for _, imp := range imports {
 			var pkgType PkgType
-			isRoot := imp == fmt.Sprintf("\"%s\"", filepath.Base(module)) || imp == fmt.Sprintf("\"%s\"", module)
-			isCurrentModule := isRoot || strings.HasPrefix(imp, "\""+module)
+			isRoot := imp == filepath.Base(module) || imp == module
+			isCurrentModule := isRoot || strings.HasPrefix(imp, module)
 			if isCurrentModule {
 				if isRoot {
-					imp = fmt.Sprintf(`"%s"`, basePkgName)
+					imp = basePkgName
 				} else {
 					imp = strings.Replace(imp, module, basePkgName, 1)
 				}
@@ -138,7 +137,7 @@ func parseImports(content string) (pkgName string, imports []string, err error) 
 		return
 	}
 	for _, imp := range f.Imports {
-		imports = append(imports, imp.Path.Value)
+		imports = append(imports, strings.Trim(imp.Path.Value, "\""))
 	}
 	return f.Name.String(), imports, nil
 }

@@ -31,21 +31,40 @@ ranksep=1.2
 node [shape="box",style="rounded,filled"]
 edge [arrowsize="0.8"]
 `)
-
+	labelsMap := make(map[string]string)
 	for pkgName, depPkgs := range pkgMap {
 		if showPkgName != "" && pkgName != showPkgName {
 			continue
 		}
-		fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\"];\n",
-			pkgName,
-			pkgName,
-		)
+		if _, ok := labelsMap[pkgName]; !ok {
+			fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\" class=\"node_module\"];\n",
+				pkgName,
+				pkgName,
+			)
+			labelsMap[pkgName] = ""
+		}
+
 		if len(depPkgs) > 0 {
 			for depPkg, depPkgType := range depPkgs {
 				if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
 					continue
 				}
-				fmt.Fprintf(&b, "\"%s\" -> %s;\n", pkgName, depPkg)
+				if depPkgType.PkgType == PkgTypeCurrentModule {
+					for pkgName2 := range pkgMap { //depend packages label
+						if pkgName2 != depPkg {
+							continue
+						}
+						if _, ok := labelsMap[pkgName2]; ok {
+							break
+						}
+						//label
+						fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\" class=\"node_module\"];\n",
+							pkgName2,
+							pkgName2,
+						)
+					}
+				}
+				fmt.Fprintf(&b, "\"%s\" -> \"%s\";\n", pkgName, depPkg)
 			}
 		}
 	}
