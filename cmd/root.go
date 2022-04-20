@@ -4,7 +4,6 @@ Copyright © 2022 alovn <alovn@live.com>
 package cmd
 
 import (
-	"log"
 	"os"
 
 	"github.com/alovn/godepgraph/app"
@@ -19,6 +18,7 @@ var (
 	showStd   bool   = false
 	showThird bool   = false
 	dot       bool   = false
+	output    string = "./godepgraph.png"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -31,20 +31,21 @@ godepgraph
 godepgraph --web
 godepgraph --std --third
 godepgraph --dot
+godepgraph --dot --output=/path/godepgraph.png
 godepgraph --web --pkg=bytego
 godepgraph --path=./myapp/ --pkg=bytego --web --listen=:7788`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if web {
 			if err := app.Serve(path, listen, pkg, showStd, showThird); err != nil {
-				log.Fatal(err)
+				os.Stderr.WriteString(err.Error())
 			}
 		} else {
 			if dot {
-				if err := app.ShowImportsWithGraphviz(path, pkg, showStd, showThird); err != nil {
-					log.Fatal(err)
+				if err := app.ShowImportsWithGraphviz(path, pkg, showStd, showThird, output); err != nil {
+					os.Stderr.WriteString(err.Error())
 				}
 			} else if err := app.ShowImports(path, pkg, showStd, showThird); err != nil {
-				log.Fatal(err)
+				os.Stderr.WriteString(err.Error())
 			}
 		}
 	},
@@ -63,8 +64,9 @@ func init() {
 	rootCmd.Flags().StringVar(&path, "path", ".", "the local path of packages")
 	rootCmd.Flags().StringVar(&pkg, "pkg", "", "the go package namge")
 	rootCmd.Flags().BoolVar(&web, "web", false, "serve a local web server and show the depgraph in the webpage")
-	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server, default localhost:7788")
-	rootCmd.Flags().BoolVar(&showStd, "std", false, "is show std lib, default false")
-	rootCmd.Flags().BoolVar(&showThird, "third", false, "is show third lib, default false")
-	rootCmd.Flags().BoolVar(&dot, "dot", false, "generate a picture using graphviz, default false")
+	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server")
+	rootCmd.Flags().BoolVar(&showStd, "std", false, "is show std lib")
+	rootCmd.Flags().BoolVar(&showThird, "third", false, "is show third lib")
+	rootCmd.Flags().BoolVar(&dot, "dot", false, "generate a picture using graphviz")
+	rootCmd.Flags().StringVar(&output, "output", "./godepgraph.png", "the output path of picture, supoort format:jpg,png,svg,gif,dot")
 }

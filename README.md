@@ -10,7 +10,7 @@ go install github.com/alovn/godepgraph@latest
 
 ## How to use
 
-You need run **godepgraph** in your go module path, or use the parameter **--path**:
+You need run **godepgraph** in your go module project path, or use the parameter **--path**:
 
 ```bash
 godepgraph --path=/workspace/bytego
@@ -29,16 +29,17 @@ The standard pkg and third pkg of dependence is not displayed by default, if wan
 godepgraph --web --std --third
 ```
 
-only show the pkg's dependences, It should be noted that the parameter **--pkg** isn't the full pkg name, for examples the full pkg name is ***github.com/gostack-labs/bytego***, the **--pkg** parameter use a short pkg name, you can run the command:
+only show the pkg's dependences, It should be noted that the parameter **--pkg** isn't the full pkg name, for examples the full pkg name is `github.com/gostack-labs/bytego`, the **--pkg** parameter use a short pkg name: `bytego`, you can run the command:
 
 ```bash
 godepgraph --pkg=bytego
 ```
 
-If you have the graphviz tools installed, you can get a picture of godepgraph.png:
+If you have the graphviz tools installed, you can get a picture, default: godepgraph.png. you can specify an output file with  **--output**, supoort format:jpg,png,svg,gif,dot.
 
 ```bash
 godepgraph --path=/workspace/bytego --dot
+godepgraph --path=/workspace/bytego --dot --output=xx.svg
 ```
 
 the picture of godepgraph.png like this:

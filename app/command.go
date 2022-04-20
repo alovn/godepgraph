@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -48,7 +49,21 @@ func ShowImports(root, showPkgName string, showStdLib, showThirdLib bool) error 
 	return nil
 }
 
-func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib bool) error {
+func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib bool, output string) error {
+	if output == "" {
+		return errors.New("error: output")
+	}
+	format := strings.ToLower(strings.TrimPrefix(filepath.Ext(output), "."))
+	supportFormat := map[string]bool{
+		"png": true,
+		"jpg": true,
+		"gif": true,
+		"svg": true,
+		"dot": true,
+	}
+	if _, ok := supportFormat[format]; !ok {
+		return errors.New("error: output format not support!")
+	}
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -71,17 +86,34 @@ func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib 
 	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib); err != nil {
 		return err
 	}
-	file, err := os.CreateTemp("", "godepgraph-*.dot")
-	if err != nil {
-		return errors.New("error create temp file")
+	if format == "dot" {
+		file, err := os.Create(output)
+		if err != nil {
+			return errors.New("error create temp file")
+		}
+		defer file.Close()
+		_, err = file.WriteString(builder.String())
+		if err != nil {
+			return fmt.Errorf("error write temp file: %v", err)
+		}
+		return nil
+	} else {
+		file, err := os.CreateTemp("", "godepgraph-*.dot")
+		if err != nil {
+			return errors.New("error create temp file")
+		}
+		tmpFilePath := file.Name()
+		defer os.Remove(tmpFilePath)
+		_, err = file.WriteString(builder.String())
+		if err != nil {
+			return fmt.Errorf("error write temp file: %v", err)
+		}
+		_ = file.Close()
+		execCmd := exec.Command("dot", fmt.Sprintf("-T%s", format), tmpFilePath, fmt.Sprintf("-o%s", output))
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
+		// fmt.Println(execCmd.String())
+		_ = execCmd.Run()
+		return nil
 	}
-	tmpFilePath := file.Name()
-	defer os.Remove(tmpFilePath)
-	_, err = file.WriteString(builder.String())
-	if err != nil {
-		return fmt.Errorf("error write temp file: %v", err)
-	}
-	_ = file.Close()
-	execCmd := exec.Command("dot", "-Tpng", tmpFilePath, "-o godepgraph.png")
-	return execCmd.Run()
 }
