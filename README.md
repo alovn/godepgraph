@@ -29,7 +29,7 @@ The standard pkg and third pkg of dependence is not displayed by default, if wan
 godepgraph --web --std --third
 ```
 
-only show the pkg's dependences, It should be noted that the parameter **--pkg** isn't the full pkg name, for examples the full pkg name is `github.com/gostack-labs/bytego`, the **--pkg** parameter use a short pkg name: `bytego`, you can run the command:
+If you want to display a specified package dependency, You need to know the parameter **--pkg** isn't the full pkg name, for examples the full pkg name is `github.com/gostack-labs/bytego`, the **--pkg** parameter is a short pkg name: `bytego`, you can run the command:
 
 ```bash
 godepgraph --pkg=bytego
