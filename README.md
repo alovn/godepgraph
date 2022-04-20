@@ -16,7 +16,7 @@ You need run **godepgraph** in your go module path, or use the parameter **--pat
 godepgraph --path=/workspace/bytego
 ```
 
-You can also start a web server in your local machine, and view the graph in a web browser, default listening localhost:7788:
+You can also start a local web server, and view the graph in a web browser, default listening localhost:7788:
 
 ```bash
 godepgraph --web
