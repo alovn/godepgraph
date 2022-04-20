@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ShowImports(root, showPkgName string, showStdLib bool) error {
+func ShowImports(root, showPkgName string, showStdLib, showThirdLib bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -38,6 +38,9 @@ func ShowImports(root, showPkgName string, showStdLib bool) error {
 				if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
 					continue
 				}
+				if !showThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
+					continue
+				}
 				fmt.Println("  ", depPkg)
 			}
 		}
@@ -45,7 +48,7 @@ func ShowImports(root, showPkgName string, showStdLib bool) error {
 	return nil
 }
 
-func ShowImportsWithGraphviz(root, showPkgName string, showStdLib bool) error {
+func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -65,7 +68,7 @@ func ShowImportsWithGraphviz(root, showPkgName string, showStdLib bool) error {
 		return err
 	}
 	var builder strings.Builder
-	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib); err != nil {
+	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib); err != nil {
 		return err
 	}
 	file, err := os.CreateTemp("", "godepgraph-*.dot")

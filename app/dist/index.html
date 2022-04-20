@@ -21,6 +21,9 @@
         }
         #btnWrap span{
             cursor: pointer;
+            display: block;
+            height: 26px;
+            line-height: 26px;
         }
         #btnWrap span.checked{
             color: blue;
@@ -59,7 +62,8 @@
     </div>
     <div id="graph"></div>
     <div id="btnWrap">
-        <span>Show Std Library</span>
+        <span id="btnStd" data-show="Show std library" data-hide="Hide std library">Show std library</span>
+        <span id="btnThird" data-show="Show third library" data-hide="Hide third library">Show third library</span>
     </div>
     <!-- <script src="https://unpkg.com/d3@7.4.4/dist/d3.min.js"></script>
     <script src="https://unpkg.com/@hpcc-js/wasm/dist/index.min.js" type="javascript/worker"></script>
@@ -71,66 +75,90 @@
     <script src="js/d3-graphviz.js"></script>
     <script src="js/jquery.js"></script>
     <script>
-        function loadData(showStdLib, pkg, callback) {
-            $.get("/graph?std="+showStdLib+"&pkg="+pkg).then(function(res, textStatus, jqXHR){
-                d3.select("#graph")
-                    .graphviz({
-                        width: window.innerWidth-30,
-                        height: window.innerHeight-30,
-                        fit: true,
-                        zoom: true,
-                    })
-                    .transition(function () {
-                        return d3.transition("main")
-                            .ease(d3.easePolyInOut)
-                            .delay(200)
-                            .duration(300);
-                    })
-                    .dot(res)
-                    .render()
-                    .on("end", interactive);;
-
-                    if(callback) {
-                        callback()
-                    }
-                    //init
-                    var pkg = jqXHR.getResponseHeader("X-Pkg")
-                    var $input = $('#inputWrap input');
-                    var inputValue = $input.val();
-                    if(!inputValue && pkg) {
-                        $input.val(pkg)
-                    }
-                    
-            }).fail(function(err){
-                console.log(err.responseText)
-                alert(err.responseText);
-            })
-        }
-        function interactive(){
-            var nodes = d3.selectAll('.node_module');
-            nodes.on("click", function(){
-                var pkg = d3.select(this).selectAll('text').text();
-                $('#inputWrap input').val(pkg);
-                var checked = $('#btnWrap span').data('checked');
-                loadData(!!checked, pkg, null);
-            });
-        }
-        function switchStdLibBtn(){
-            setTimeout(function(){
-                var $btn = $('#btnWrap span');
-                var old = $btn.data('checked');
-                var showStdLib = !old;
-                $btn.data('checked', showStdLib);
-                if(showStdLib) {
-                    $btn.addClass("checked").text("Hide Std Library");
-                } else {
-                    $btn.removeClass("checked").text("Show Std Library");;
-                }
-            },100);
-        }
+        
+        
         
         $(function(){
-            $('#inputWrap input').keypress(function(event){
+            var $input = $('#inputWrap input');
+            var $btnReset = $('#inputWrap button');
+            var $btnStd = $('#btnStd');
+            var $btnThird = $('#btnThird');
+            function loadData(showStdLib, showThirdLib, pkg, callback) {
+                $.get("/graph?std="+showStdLib+"&third="+showThirdLib+"&pkg="+pkg).then(function(res, textStatus, jqXHR){
+                    d3.select("#graph")
+                        .graphviz({
+                            width: window.innerWidth-30,
+                            height: window.innerHeight-30,
+                            fit: true,
+                            zoom: true,
+                        })
+                        .transition(function () {
+                            return d3.transition("main")
+                                .ease(d3.easePolyInOut)
+                                .delay(200)
+                                .duration(300);
+                        })
+                        .dot(res)
+                        .render()
+                        .on("end", interactive);;
+
+                        if(callback) {
+                            callback()
+                        }
+                        //init input
+                        var pkg = jqXHR.getResponseHeader("X-Pkg")
+                        var inputValue = $input.val();
+                        if(!inputValue && pkg) {
+                            $input.val(pkg)
+                        }
+                        
+                }).fail(function(err){
+                    console.log(err.responseText)
+                    alert(err.responseText);
+                })
+            }
+            function interactive(){
+                var nodes = d3.selectAll('.node_module');
+                nodes.on("click", function(){
+                    var pkg = d3.select(this).selectAll('text').text();
+                    $('#inputWrap input').val(pkg);
+                    var showStd = !!$('#btnStd').data('checked');
+                    var showThird = !!$('#btnThird').data('checked');
+                    loadData(showStd, showThird, pkg, null);
+                });
+            }
+
+            function reload(callback){
+                var showStd = !!$btnStd.data('checked');
+                var showThird = !!$btnThird.data('checked');
+                var pkg = $input.val();
+                loadData(showStd, showThird, pkg, callback);
+            }
+            function switchBtn($btn){
+                return function (){
+                    setTimeout(function(){
+                        var checked = !$btn.data('checked');
+                        $btn.data('checked', checked);
+                        if(checked) {
+                            $btn.addClass("checked").text($btn.data('hide'));
+                        } else {
+                            $btn.removeClass("checked").text($btn.data('hide'));
+                        }
+                    },100);
+                }
+            }
+            function switchThirdLibBtn(){
+                setTimeout(function(){
+                    var showStdLib = !$btnThird.data('checked');
+                    $btnStd.data('checked', showStdLib);
+                    if(showStdLib) {
+                        $btnStd.addClass("checked").text("Hide third library");
+                    } else {
+                        $btnStd.removeClass("checked").text("Show third library");;
+                    }
+                },100);
+            }
+            $input.keypress(function(event){
                 if(event.keyCode == 13) {
                     var checked = $('#btnWrap span').data('checked');
                     var pkg = $(this).val();
@@ -138,18 +166,24 @@
                 }
             });
             //reset
-            $('#inputWrap button').click(function(){
-                $('#inputWrap input').val('');
-                var checked = $('#btnWrap span').data('checked');
-                loadData(!!checked, '', null);
+            $btnReset.click(function(){
+                $input.val('');
+                reload(null);
             });
-            $('#btnWrap span').click(function(){
-                var checked = $(this).data('checked');
-                var pkg = $('#inputWrap input').val();
-                loadData(!checked, pkg, switchStdLibBtn);
+            $btnStd.click(function(){
+                var showStd = !!$btnStd.data('checked');
+                var showThird = !!$btnThird.data('checked');
+                var pkg = $input.val();
+                loadData(!showStd, showThird, pkg, switchBtn($btnStd));
             });
-            $('#inputWrap input').focus();
-            loadData(false, "", null)
+            $btnThird.click(function(){
+                var showStd = !!$btnStd.data('checked');
+                var showThird = !!$btnThird.data('checked');
+                var pkg = $input.val();
+                loadData(showStd, !showThird, pkg, switchBtn($btnThird));
+            });
+            $input.focus();
+            reload(null)
         });
     </script>
 </body>

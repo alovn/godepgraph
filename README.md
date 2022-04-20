@@ -23,10 +23,10 @@ godepgraph --web
 godepgraph --web --listen=:8080
 ```
 
-The standard library of go is not displayed by default, if want dispaly the standart libray:
+The standard pkg and third pkg of dependence is not displayed by default, if want:
 
 ```bash
-godepgraph --web --std
+godepgraph --web --std --third
 ```
 
 only show the pkg's dependences, It should be noted that the parameter **--pkg** isn't the full pkg name, for examples the full pkg name is ***github.com/gostack-labs/bytego***, the **--pkg** parameter use a short pkg name, you can run the command:

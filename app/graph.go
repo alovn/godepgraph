@@ -11,7 +11,7 @@ var (
 	cache PkgMap
 )
 
-func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib bool) error {
+func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib, showThirdLib bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -62,6 +62,9 @@ edge [arrowsize="0.8"]
 				if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
 					continue
 				}
+				if !showThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
+					continue
+				}
 				if depPkgType.PkgType == PkgTypeCurrentModule {
 					for pkgName2 := range pkgMap { //depend packages label
 						if pkgName2 != depPkg {
@@ -75,6 +78,7 @@ edge [arrowsize="0.8"]
 							pkgName2,
 							pkgName2,
 						)
+						labelsMap[pkgName2] = ""
 					}
 				}
 				fmt.Fprintf(&b, "\"%s\" -> \"%s\";\n", pkgName, depPkg)
