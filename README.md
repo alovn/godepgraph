@@ -1,4 +1,4 @@
-![godepgraph](./docs/godepgraph.svg)
+![godepgraph](./docs/logo.png)
 
 **godepgraph** is a dependency graph visualization tool for your local go module project.
 
