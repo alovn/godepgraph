@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ShowImports(root, showPkgName string, showStdLib, showThirdLib bool) error {
+func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -29,27 +29,59 @@ func ShowImports(root, showPkgName string, showStdLib, showThirdLib bool) error 
 		return err
 	}
 
+	if isReverse { //reverse depencency
+		//search pkg
+		if showPkgName == "" {
+			return errors.New("pkg name required")
+		}
+		fmt.Println(showPkgName)
+		var selectDepPkgs []string
+		for pkgName, depPkgs := range pkgMap {
+			for depPkg := range depPkgs {
+				if showPkgName == depPkg {
+					// fmt.Println("  ", pkgName)
+					selectDepPkgs = append(selectDepPkgs, pkgName)
+				}
+			}
+		}
+		for i, pkgName := range selectDepPkgs {
+			flag := "├──"
+			if i == len(selectDepPkgs)-1 {
+				flag = "└──"
+			}
+			fmt.Println(flag, pkgName)
+		}
+		return nil
+	}
+
 	for pkgName, depPkgs := range pkgMap {
 		if showPkgName != "" && pkgName != showPkgName {
 			continue
 		}
 		fmt.Println(pkgName)
-		if len(depPkgs) > 0 {
-			for depPkg, depPkgType := range depPkgs {
-				if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
-					continue
-				}
-				if !showThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
-					continue
-				}
-				fmt.Println("  ", depPkg)
+		var selectDepPkgs []string
+		for depPkg, depPkgType := range depPkgs {
+			if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
+				continue
 			}
+			if !showThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
+				continue
+			}
+			selectDepPkgs = append(selectDepPkgs, depPkg)
+			// fmt.Println("  ", depPkg)
+		}
+		for i, depPkg := range selectDepPkgs {
+			flag := "├──"
+			if i == len(selectDepPkgs)-1 {
+				flag = "└──"
+			}
+			fmt.Println(flag, depPkg)
 		}
 	}
 	return nil
 }
 
-func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib bool, output string) error {
+func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib, reverse bool, output string) error {
 	if output == "" {
 		return errors.New("error: output")
 	}
@@ -83,7 +115,7 @@ func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib 
 		return err
 	}
 	var builder strings.Builder
-	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib); err != nil {
+	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib, reverse); err != nil {
 		return err
 	}
 	if format == "dot" {

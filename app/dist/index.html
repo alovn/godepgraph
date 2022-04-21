@@ -13,34 +13,27 @@
             text-align: center;
             margin-top: 8px;
         }
-        #btnWrap{
-            position: fixed;
-            top: 5px;
-            right: 5px;
-            user-select:none;
-        }
-        #btnWrap span{
-            cursor: pointer;
-            display: block;
-            height: 26px;
-            line-height: 26px;
-        }
-        #btnWrap span.checked{
-            color: blue;
-        }
         #inputWrap{
             position:fixed;
-            top: 5px;;
+            top: 5px;
             left:50%;
             margin-left: -250px;
-            width:500px;
+            width:750px;
             height:30px;
             line-height: 30px;
             text-align: center;
+            vertical-align: middle;
+            user-select:none;
         }
-        #inputWrap input {
+        #inputWrap input[type="checkbox"] {
+            width: 40px;
+            height:30px;
+            line-height: 30px;
+            vertical-align: middle;
+        }
+        #inputPkg {
             text-align: center;
-            width: 400px;
+            width: 350px;
             height:30px;
             line-height: 30px;
             color: gray;
@@ -57,14 +50,13 @@
 </head>
 <body>
     <div id="inputWrap">
-        <input type="text" />
-        <button type="button">rest</button>
+        <input type="text" id="inputPkg" />
+        <button type="button" id="btnReset">Rest</button>
+        <label><input type="checkbox" id="ckbReverse"/>Reverse</label>
+        <label><input type="checkbox" id="ckbStd"/>Show Std</label>
+        <label><input type="checkbox" id="ckbThird"/>Show Third</label>
     </div>
     <div id="graph"></div>
-    <div id="btnWrap">
-        <span id="btnStd" data-show="Show std library" data-hide="Hide std library">Show std library</span>
-        <span id="btnThird" data-show="Show third library" data-hide="Hide third library">Show third library</span>
-    </div>
     <!-- <script src="https://unpkg.com/d3@7.4.4/dist/d3.min.js"></script>
     <script src="https://unpkg.com/@hpcc-js/wasm/dist/index.min.js" type="javascript/worker"></script>
     <script src="https://unpkg.com/d3-graphviz@4.1.1/build/d3-graphviz.js"></script>
@@ -73,18 +65,21 @@
     <script src="js/d3.min.js"></script>
     <script src="js/wasm.min.js" type="javascript/worker"></script>
     <script src="js/d3-graphviz.js"></script>
-    <script src="js/jquery.js"></script>
+    <script src="js/jquery.min.js"></script>
     <script>
-        
-        
-        
         $(function(){
-            var $input = $('#inputWrap input');
-            var $btnReset = $('#inputWrap button');
-            var $btnStd = $('#btnStd');
-            var $btnThird = $('#btnThird');
-            function loadData(showStdLib, showThirdLib, pkg, callback) {
-                $.get("/graph?std="+showStdLib+"&third="+showThirdLib+"&pkg="+pkg).then(function(res, textStatus, jqXHR){
+            var $input = $('#inputPkg');
+            var $btnReset = $('#btnReset');
+            var $ckbStd = $('#ckbStd');
+            var $ckbThird = $('#ckbThird');
+            var $ckbReverse = $('#ckbReverse');
+            function loadData(isInit) {
+                var pkg = $input.val();
+                var showStdLib = $ckbStd.is(':checked');
+                var showThirdLib = $ckbThird.is(':checked');
+                var isReverse = $ckbReverse.is(':checked') && !$ckbReverse.prop('disabled');
+                isReverse = isReverse && pkg != ""
+                $.get("/graph?std="+showStdLib+"&third="+showThirdLib+"&pkg="+$.trim(pkg)+"&reverse="+isReverse+"&init="+isInit).then(function(res, textStatus, jqXHR){
                     d3.select("#graph")
                         .graphviz({
                             width: window.innerWidth-30,
@@ -102,16 +97,17 @@
                         .render()
                         .on("end", interactive);;
 
-                        if(callback) {
-                            callback()
-                        }
                         //init input
-                        var pkg = jqXHR.getResponseHeader("X-Pkg")
-                        var inputValue = $input.val();
-                        if(!inputValue && pkg) {
-                            $input.val(pkg)
+                        if(isInit){
+                            var pkg = jqXHR.getResponseHeader("X-Pkg")
+                            var inputValue = $input.val();
+                            if(!inputValue && !!pkg) {
+                                $input.val(pkg)
+                            }
+                            if(!pkg) {
+                                $ckbReverse.attr("disabled", true);
+                            }
                         }
-                        
                 }).fail(function(err){
                     console.log(err.responseText)
                     alert(err.responseText);
@@ -121,69 +117,40 @@
                 var nodes = d3.selectAll('.node_module');
                 nodes.on("click", function(){
                     var pkg = d3.select(this).selectAll('text').text();
-                    $('#inputWrap input').val(pkg);
-                    var showStd = !!$('#btnStd').data('checked');
-                    var showThird = !!$('#btnThird').data('checked');
-                    loadData(showStd, showThird, pkg, null);
+                    $input.val(pkg);
+                    $ckbReverse.removeAttr("disabled");
+                    loadData(false);
                 });
             }
-
-            function reload(callback){
-                var showStd = !!$btnStd.data('checked');
-                var showThird = !!$btnThird.data('checked');
-                var pkg = $input.val();
-                loadData(showStd, showThird, pkg, callback);
-            }
-            function switchBtn($btn){
-                return function (){
-                    setTimeout(function(){
-                        var checked = !$btn.data('checked');
-                        $btn.data('checked', checked);
-                        if(checked) {
-                            $btn.addClass("checked").text($btn.data('hide'));
-                        } else {
-                            $btn.removeClass("checked").text($btn.data('hide'));
-                        }
-                    },100);
+            $input.keyup(function(event){
+                if($.trim($input.val())!="") {
+                    $ckbReverse.removeAttr("disabled");
+                }else {
+                    $ckbReverse.attr("disabled", true);
                 }
-            }
-            function switchThirdLibBtn(){
-                setTimeout(function(){
-                    var showStdLib = !$btnThird.data('checked');
-                    $btnStd.data('checked', showStdLib);
-                    if(showStdLib) {
-                        $btnStd.addClass("checked").text("Hide third library");
-                    } else {
-                        $btnStd.removeClass("checked").text("Show third library");;
-                    }
-                },100);
-            }
+            });
             $input.keypress(function(event){
                 if(event.keyCode == 13) {
-                    var checked = $('#btnWrap span').data('checked');
-                    var pkg = $(this).val();
-                    loadData(!!checked, pkg, null);
+                    loadData(false);
                 }
             });
             //reset
             $btnReset.click(function(){
                 $input.val('');
-                reload(null);
+                $ckbReverse.attr("disabled", true);
+                loadData(false);
             });
-            $btnStd.click(function(){
-                var showStd = !!$btnStd.data('checked');
-                var showThird = !!$btnThird.data('checked');
-                var pkg = $input.val();
-                loadData(!showStd, showThird, pkg, switchBtn($btnStd));
+            $ckbReverse.change(function(){
+                loadData(false);
             });
-            $btnThird.click(function(){
-                var showStd = !!$btnStd.data('checked');
-                var showThird = !!$btnThird.data('checked');
-                var pkg = $input.val();
-                loadData(showStd, !showThird, pkg, switchBtn($btnThird));
+            $ckbStd.change(function(){
+                loadData(false);
+            });
+            $ckbThird.change(function(){
+                loadData(false);
             });
             $input.focus();
-            reload(null)
+            loadData(true)
         });
     </script>
 </body>
