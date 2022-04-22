@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse bool) error {
+func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
 	if root == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -24,11 +24,13 @@ func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse b
 	if module == "" {
 		return errors.New("error: the path must be a go module directory.")
 	}
-	pkgMap := make(map[string]map[string]PkgTypeInfo)
+	if modGraph {
+		return OutputModGraph(os.Stdout, root, module, showPkgName, true)
+	}
+	pkgMap := make(PkgMap)
 	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
 		return err
 	}
-
 	if isReverse { //reverse depencency
 		//search pkg
 		if showPkgName == "" {
@@ -81,7 +83,7 @@ func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse b
 	return nil
 }
 
-func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib, reverse bool, output string) error {
+func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib, reverse, modGraph bool, output string) error {
 	if output == "" {
 		return errors.New("error: output")
 	}
@@ -110,12 +112,9 @@ func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib,
 	if module == "" {
 		return errors.New("error: the path must be a go module directory.")
 	}
-	pkgMap := make(map[string]map[string]PkgTypeInfo)
-	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
-		return err
-	}
+
 	var builder strings.Builder
-	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib, reverse); err != nil {
+	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib, reverse, modGraph); err != nil {
 		return err
 	}
 	if format == "dot" {

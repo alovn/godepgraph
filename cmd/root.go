@@ -20,6 +20,7 @@ var (
 	dot       bool   = false
 	output    string = "./godepgraph.png"
 	reverse   bool   = false
+	mod       bool   = false
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -52,11 +53,11 @@ godepgraph --path=./myapp/ --pkg=bytego --web --listen=:7788`,
 			}
 		} else {
 			if dot {
-				if err := app.ShowImportsWithGraphviz(path, pkg, showStd, showThird, reverse, output); err != nil {
+				if err := app.ShowImportsWithGraphviz(path, pkg, showStd, showThird, reverse, mod, output); err != nil {
 					write(err.Error())
 					return
 				}
-			} else if err := app.ShowImports(path, pkg, showStd, showThird, reverse); err != nil {
+			} else if err := app.ShowImports(path, pkg, showStd, showThird, reverse, mod); err != nil {
 				write(err.Error())
 				return
 			}
@@ -76,11 +77,12 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringVar(&path, "path", ".", "the local path of packages")
 	rootCmd.Flags().StringVar(&pkg, "pkg", "", "the go package namge")
-	rootCmd.Flags().BoolVar(&web, "web", false, "serve a local web server and show the depgraph in the webpage")
+	rootCmd.Flags().BoolVar(&web, "web", true, "serve a local web server and show the depgraph in the webpage")
 	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server")
 	rootCmd.Flags().BoolVar(&showStd, "std", false, "show std lib")
 	rootCmd.Flags().BoolVar(&showThird, "third", false, "ishow third lib")
 	rootCmd.Flags().BoolVar(&reverse, "reverse", false, "reverse dependency")
+	rootCmd.Flags().BoolVar(&mod, "mod", false, "go mod graph")
 	rootCmd.Flags().BoolVar(&dot, "dot", false, "generate a picture using graphviz")
 	rootCmd.Flags().StringVar(&output, "output", "./godepgraph.png", "the output path of picture, supoort format:jpg,png,svg,gif,dot")
 }

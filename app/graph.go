@@ -12,24 +12,27 @@ var (
 	cache PkgMap
 )
 
-func OutputGraphFormat(w io.Writer, root, showPkgName string, showStdLib, showThirdLib, isReverse bool) error {
-	if root == "" {
+func OutputGraphFormat(w io.Writer, path, showPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
+	if path == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		root = cwd
+		path = cwd
 	}
-	module, err := ReadGoModule(root)
+	module, err := ReadGoModule(path)
 	if err != nil {
 		return err
+	}
+	if modGraph {
+		return OutputModGraph(w, path, module, showPkgName, false)
 	}
 
 	//read cache first
 	var pkgMap PkgMap
 	if cache == nil {
 		pkgMap = make(PkgMap)
-		if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
+		if err := ReadDirImportPkgs(path, "", module, pkgMap); err != nil {
 			return err
 		}
 		cache = pkgMap

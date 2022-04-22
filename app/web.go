@@ -1,20 +1,15 @@
 package app
 
 import (
-	"io/fs"
 	"net/http"
 	"strconv"
+
+	"github.com/alovn/godepgraph/web"
 )
 
 func Serve(root, addr, showPkgName string, showStdLib, showThirdLib, reverse bool) error {
-	distFS, err := fs.Sub(distFiles, "dist")
-	if err != nil {
-		return err
-	}
-	mux := http.DefaultServeMux
-	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(distFS))))
-	mux.HandleFunc("/graph", graphHandler(root, showPkgName, showStdLib, showThirdLib, reverse))
-	return http.ListenAndServe(addr, mux)
+	http.HandleFunc("/graph", graphHandler(root, showPkgName, showStdLib, showThirdLib, reverse))
+	return web.Serve(addr)
 }
 
 func graphHandler(root, showPkgName string, showStdLib, showThirdLib, reverse bool) http.HandlerFunc {
@@ -24,6 +19,7 @@ func graphHandler(root, showPkgName string, showStdLib, showThirdLib, reverse bo
 		showThird := showThirdLib
 		isReverse := reverse && pkgName != ""
 		isInit := r.URL.Query().Get("init") == "true"
+		mod := r.URL.Query().Get("mod") == "true"
 		if query := r.URL.Query().Get("std"); query != "" {
 			showStd = query == "true"
 		}
@@ -38,7 +34,7 @@ func graphHandler(root, showPkgName string, showStdLib, showThirdLib, reverse bo
 		}
 		w.Header().Add("x-pkg", pkgName)
 		w.Header().Add("x-reverse", strconv.FormatBool(isReverse))
-		if err := OutputGraphFormat(w, root, pkgName, showStd, showThird, isReverse); err != nil {
+		if err := OutputGraphFormat(w, root, pkgName, showStd, showThird, isReverse, mod); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 		}
