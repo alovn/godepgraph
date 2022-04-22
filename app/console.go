@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func ShowImports(path, showPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
+func PrintPkgImports(path, findPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
 	if path == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -24,8 +24,8 @@ func ShowImports(path, showPkgName string, showStdLib, showThirdLib, isReverse, 
 	if module == "" {
 		return errors.New("error: the path must be a go module directory.")
 	}
-	if modGraph {
-		return OutputModGraph(os.Stdout, path, module, showPkgName, isReverse, true)
+	if modGraph { //go mod graph tree
+		return OutputModGraph(os.Stdout, path, module, findPkgName, isReverse, true)
 	}
 	pkgMap := make(PkgMap)
 	if err := ReadDirImportPkgs(path, "", module, pkgMap); err != nil {
@@ -33,15 +33,14 @@ func ShowImports(path, showPkgName string, showStdLib, showThirdLib, isReverse, 
 	}
 	if isReverse { //reverse depencency
 		//search pkg
-		if showPkgName == "" {
+		if findPkgName == "" {
 			return errors.New("pkg name required")
 		}
-		fmt.Println(showPkgName)
+		fmt.Println(findPkgName)
 		var selectDepPkgs []string
 		for pkgName, depPkgs := range pkgMap {
 			for depPkg := range depPkgs {
-				if showPkgName == depPkg {
-					// fmt.Println("  ", pkgName)
+				if findPkgName == depPkg {
 					selectDepPkgs = append(selectDepPkgs, pkgName)
 				}
 			}
@@ -51,13 +50,13 @@ func ShowImports(path, showPkgName string, showStdLib, showThirdLib, isReverse, 
 			if i == len(selectDepPkgs)-1 {
 				flag = "└──"
 			}
-			fmt.Println(flag, pkgName)
+			fmt.Printf("%s%s\n", flag, pkgName)
 		}
 		return nil
 	}
 
 	for pkgName, depPkgs := range pkgMap {
-		if showPkgName != "" && pkgName != showPkgName {
+		if findPkgName != "" && pkgName != findPkgName {
 			continue
 		}
 		fmt.Println(pkgName)
@@ -77,13 +76,13 @@ func ShowImports(path, showPkgName string, showStdLib, showThirdLib, isReverse, 
 			if i == len(selectDepPkgs)-1 {
 				flag = "└──"
 			}
-			fmt.Println(flag, depPkg)
+			fmt.Printf("%s%s\n", flag, depPkg)
 		}
 	}
 	return nil
 }
 
-func ShowImportsWithGraphviz(path, showPkgName string, showStdLib, showThirdLib, reverse, modGraph bool, output string) error {
+func PrintPkgImportsGraphviz(path, showPkgName string, showStdLib, showThirdLib, reverse, modGraph bool, output string) error {
 	if output == "" {
 		return errors.New("error: output")
 	}

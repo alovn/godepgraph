@@ -7,15 +7,15 @@ import (
 	"github.com/alovn/godepgraph/web"
 )
 
-func Serve(path, addr, showPkgName string, showStdLib, showThirdLib, reverse bool) error {
-	http.HandleFunc("/graph", graphHandler(path, showPkgName, showStdLib, showThirdLib, reverse))
+func Serve(path, addr, findPkgName string, showStdLib, showThirdLib, reverse bool) error {
+	http.HandleFunc("/graph", graphHandler(path, findPkgName, showStdLib, showThirdLib, reverse))
 	return web.Serve(addr)
 }
 
-func graphHandler(path, showPkgName string, showStdLib, showThirdLib, reverse bool) http.HandlerFunc {
+func graphHandler(path, findPkgName string, showStdLib, showThirdLib, reverse bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		showStd := showStdLib
-		pkgName := showPkgName
+		pkgName := findPkgName
 		showThird := showThirdLib
 		isReverse := reverse && pkgName != ""
 		isInit := r.URL.Query().Get("init") == "true"

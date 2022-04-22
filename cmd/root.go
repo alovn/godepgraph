@@ -53,11 +53,11 @@ godepgraph --path=./myapp/ --pkg=bytego --web --listen=:7788`,
 			}
 		} else {
 			if dot {
-				if err := app.ShowImportsWithGraphviz(path, pkg, showStd, showThird, reverse, mod, output); err != nil {
+				if err := app.PrintPkgImportsGraphviz(path, pkg, showStd, showThird, reverse, mod, output); err != nil {
 					write(err.Error())
 					return
 				}
-			} else if err := app.ShowImports(path, pkg, showStd, showThird, reverse, mod); err != nil {
+			} else if err := app.PrintPkgImports(path, pkg, showStd, showThird, reverse, mod); err != nil {
 				write(err.Error())
 				return
 			}

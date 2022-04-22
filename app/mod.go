@@ -116,7 +116,7 @@ func outputModGraphTree(w io.Writer, tree *ModuleGraphNode, depth int) {
 			prefix := getPrintPrefix(tree.Parent)
 			prefixStr = strings.Join(prefix, "")
 		}
-		_, _ = w.Write([]byte(fmt.Sprintf("%s %s\n", prefixStr+flag, dep.Name)))
+		_, _ = w.Write([]byte(fmt.Sprintf("%s%s\n", prefixStr+flag, dep.Name)))
 		// fmt.Println(prefixStr+flag, dep.Name)
 		tree.Index++
 		outputModGraphTree(w, dep, depth)
@@ -165,7 +165,7 @@ func getPrintPrefix(node *ModuleGraphNode) []string {
 	return prefix
 }
 
-func OutputModGraph(w io.Writer, path, rootModule, findModule string, isReverse, isTree bool) error {
+func OutputModGraph(w io.Writer, path, rootModule, findModule string, isReverse, isTreeStyle bool) error {
 	pkgMap, links, err := buildModGraphMap(path)
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func OutputModGraph(w io.Writer, path, rootModule, findModule string, isReverse,
 		findModule = rootModule
 	}
 	if isReverse {
-		return OutputModGraphReverse(w, links, findModule, isTree)
+		return OutputModGraphReverse(w, links, findModule, isTreeStyle)
 	}
 	depth := 0
 	tree := &ModuleGraphNode{
@@ -189,7 +189,7 @@ func OutputModGraph(w io.Writer, path, rootModule, findModule string, isReverse,
 		return err
 	}
 
-	if isTree {
+	if isTreeStyle {
 		fmt.Println(findModule)
 		outputModGraphTree(w, tree, 0)
 	} else {
