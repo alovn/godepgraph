@@ -77,7 +77,7 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringVar(&path, "path", ".", "the local path of packages")
 	rootCmd.Flags().StringVar(&pkg, "pkg", "", "the go package namge")
-	rootCmd.Flags().BoolVar(&web, "web", true, "serve a local web server and show the depgraph in the webpage")
+	rootCmd.Flags().BoolVar(&web, "web", false, "serve a local web server and show the depgraph in the webpage")
 	rootCmd.Flags().StringVar(&listen, "listen", "localhost:7788", "listen address of web server")
 	rootCmd.Flags().BoolVar(&showStd, "std", false, "show std lib")
 	rootCmd.Flags().BoolVar(&showThird, "third", false, "ishow third lib")

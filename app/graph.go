@@ -25,7 +25,7 @@ func OutputGraphFormat(w io.Writer, path, showPkgName string, showStdLib, showTh
 		return err
 	}
 	if modGraph {
-		return OutputModGraph(w, path, module, showPkgName, false)
+		return OutputModGraph(w, path, module, showPkgName, isReverse, false)
 	}
 
 	//read cache first

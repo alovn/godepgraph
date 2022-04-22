@@ -10,18 +10,31 @@ import (
 	"strings"
 )
 
-func buildModGraphMap(path string) (PkgMap, error) {
+type ModuleGraphNode struct {
+	Name    string
+	PkgType PkgType
+	Deps    []*ModuleGraphNode
+	Parent  *ModuleGraphNode `json:"-"`
+	Index   int
+	Depth   int
+}
+
+type ModGraphLink struct {
+	Source string
+	Target string
+}
+
+func buildModGraphMap(path string) (pkgMap PkgMap, links []ModGraphLink, err error) {
 	execCmd := exec.Command("go", "mod", "graph")
 	execCmd.Dir = path
 	execCmd.Stderr = os.Stderr
 	// execCmd.Stdout = os.Stdout
 	var out bytes.Buffer
 	execCmd.Stdout = &out
-	err := execCmd.Run()
-	if err != nil {
-		return nil, err
+	if err = execCmd.Run(); err != nil {
+		return
 	}
-	pkgMap := make(PkgMap)
+	pkgMap = make(PkgMap)
 	reader := bufio.NewReader(&out)
 	for {
 		line, _, err := reader.ReadLine()
@@ -29,7 +42,7 @@ func buildModGraphMap(path string) (PkgMap, error) {
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return nil, nil, err
 		}
 		arr := strings.Split(string(line), " ")
 		if len(arr) != 2 {
@@ -50,18 +63,13 @@ func buildModGraphMap(path string) (PkgMap, error) {
 				},
 			}
 		}
+		links = append(links, ModGraphLink{
+			Source: source,
+			Target: target,
+		})
 
 	}
-	return pkgMap, nil
-}
-
-type ModuleGraphNode struct {
-	Name    string
-	PkgType PkgType
-	Deps    []*ModuleGraphNode
-	Parent  *ModuleGraphNode `json:"-"`
-	Index   int
-	Depth   int
+	return
 }
 
 func buildModGraphTree(module string, allPkgMap PkgMap, parent *ModuleGraphNode, depth int) error {
@@ -157,13 +165,16 @@ func getPrintPrefix(node *ModuleGraphNode) []string {
 	return prefix
 }
 
-func OutputModGraph(w io.Writer, path, rootModule, findModule string, isTree bool) error {
-	pkgMap, err := buildModGraphMap(path)
+func OutputModGraph(w io.Writer, path, rootModule, findModule string, isReverse, isTree bool) error {
+	pkgMap, links, err := buildModGraphMap(path)
 	if err != nil {
 		return err
 	}
 	if findModule == "" {
 		findModule = rootModule
+	}
+	if isReverse {
+		return OutputModGraphReverse(w, links, findModule, isTree)
 	}
 	depth := 0
 	tree := &ModuleGraphNode{
@@ -182,33 +193,72 @@ func OutputModGraph(w io.Writer, path, rootModule, findModule string, isTree boo
 		fmt.Println(findModule)
 		outputModGraphTree(w, tree, 0)
 	} else {
+
 		outputModGraphViz(w, tree)
 	}
 	return nil
 }
 
+func OutputModGraphReverse(w io.Writer, links []ModGraphLink, findModule string, isTree bool) error {
+	var buf bytes.Buffer
+	if isTree {
+		fmt.Fprintln(&buf, findModule)
+		for _, link := range links {
+			if link.Target == findModule {
+				fmt.Fprintln(&buf, link.Source)
+			}
+		}
+	} else {
+		fmt.Fprint(&buf, `digraph godepgraph {
+			splines=curved
+			nodesep=0.8
+			ranksep=5
+			node [shape="box",style="rounded,filled"]
+			edge [arrowsize="0.8"]
+			`)
+		for _, link := range links {
+			if link.Target == findModule {
+				fmt.Fprintf(&buf, "\"%s\" -> \"%s\";\n", link.Source, link.Target)
+			}
+		}
+		fmt.Fprintf(&buf, "}")
+	}
+	_, _ = w.Write(buf.Bytes())
+	return nil
+}
+
 func outputModGraphViz(w io.Writer, tree *ModuleGraphNode) {
-	var b bytes.Buffer
-	fmt.Fprint(&b, `digraph godepgraph {
+	var buf bytes.Buffer
+	hashMap := make(map[string]bool)
+	fmt.Fprint(&buf, `digraph godepgraph {
 splines=curved
 nodesep=0.8
 ranksep=5
 node [shape="box",style="rounded,filled"]
 edge [arrowsize="0.8"]
 `)
-	outputModGraphNode(&b, tree, 0)
-	fmt.Fprintf(&b, "}")
-	_, _ = w.Write(b.Bytes())
+	outputModGraphNode(&buf, tree, 0, hashMap)
+	fmt.Fprintf(&buf, "}")
+	_, _ = w.Write(buf.Bytes())
 }
 
-func outputModGraphNode(b *bytes.Buffer, tree *ModuleGraphNode, depth int) {
+func outputModGraphNode(b *bytes.Buffer, tree *ModuleGraphNode, depth int, hashMap map[string]bool) {
 	if tree == nil {
 		return
 	}
 	depth++
 	for _, dep := range tree.Deps {
+		var key string
+		if n := strings.Compare(tree.Name, dep.Name); n > -1 {
+			key = tree.Name + dep.Name
+		} else {
+			key = dep.Name + tree.Name
+		}
+		if _, ok := hashMap[key]; ok {
+			continue
+		}
+		hashMap[key] = true
 		fmt.Fprintf(b, "\"%s\" -> \"%s\";\n", tree.Name, dep.Name)
-		fmt.Println()
-		outputModGraphNode(b, dep, depth)
+		outputModGraphNode(b, dep, depth, hashMap)
 	}
 }

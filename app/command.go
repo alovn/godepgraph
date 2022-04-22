@@ -9,15 +9,15 @@ import (
 	"strings"
 )
 
-func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
-	if root == "" {
+func ShowImports(path, showPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
+	if path == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		root = cwd
+		path = cwd
 	}
-	module, err := ReadGoModule(root)
+	module, err := ReadGoModule(path)
 	if err != nil {
 		return err
 	}
@@ -25,10 +25,10 @@ func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse, 
 		return errors.New("error: the path must be a go module directory.")
 	}
 	if modGraph {
-		return OutputModGraph(os.Stdout, root, module, showPkgName, true)
+		return OutputModGraph(os.Stdout, path, module, showPkgName, isReverse, true)
 	}
 	pkgMap := make(PkgMap)
-	if err := ReadDirImportPkgs(root, "", module, pkgMap); err != nil {
+	if err := ReadDirImportPkgs(path, "", module, pkgMap); err != nil {
 		return err
 	}
 	if isReverse { //reverse depencency
@@ -83,7 +83,7 @@ func ShowImports(root, showPkgName string, showStdLib, showThirdLib, isReverse, 
 	return nil
 }
 
-func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib, reverse, modGraph bool, output string) error {
+func ShowImportsWithGraphviz(path, showPkgName string, showStdLib, showThirdLib, reverse, modGraph bool, output string) error {
 	if output == "" {
 		return errors.New("error: output")
 	}
@@ -98,14 +98,14 @@ func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib,
 	if _, ok := supportFormat[format]; !ok {
 		return errors.New("error: output format not support!")
 	}
-	if root == "" {
+	if path == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		root = cwd
+		path = cwd
 	}
-	module, err := ReadGoModule(root)
+	module, err := ReadGoModule(path)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func ShowImportsWithGraphviz(root, showPkgName string, showStdLib, showThirdLib,
 	}
 
 	var builder strings.Builder
-	if err := OutputGraphFormat(&builder, root, showPkgName, showStdLib, showThirdLib, reverse, modGraph); err != nil {
+	if err := OutputGraphFormat(&builder, path, showPkgName, showStdLib, showThirdLib, reverse, modGraph); err != nil {
 		return err
 	}
 	if format == "dot" {

@@ -23,8 +23,8 @@ const (
 	PkgTypeThirdModule
 )
 
-func ReadDirImportPkgs(rootPath, parentDirPath, module string, pkgMap PkgMap) error {
-	dirPath := filepath.Join(rootPath, parentDirPath)
+func ReadDirImportPkgs(path, parentDirPath, module string, pkgMap PkgMap) error {
+	dirPath := filepath.Join(path, parentDirPath)
 	dirs, err := os.ReadDir(dirPath)
 	if err != nil {
 		return err
@@ -51,20 +51,20 @@ func ReadDirImportPkgs(rootPath, parentDirPath, module string, pkgMap PkgMap) er
 		}
 	}
 	if len(goFiles) > 0 {
-		if err := ReadGoFilesImportPkgs(rootPath, parentDirPath, module, goFiles, pkgMap); err != nil {
+		if err := ReadGoFilesImportPkgs(path, parentDirPath, module, goFiles, pkgMap); err != nil {
 			return err
 		}
 	}
 	for _, subDir := range subDirs {
 		subDirPath := filepath.Join(parentDirPath, subDir)
-		if err := ReadDirImportPkgs(rootPath, subDirPath, module, pkgMap); err != nil {
+		if err := ReadDirImportPkgs(path, subDirPath, module, pkgMap); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func ReadGoFilesImportPkgs(rootPath, parentDirPath, module string, goFiles []string, pkgMap PkgMap) error {
+func ReadGoFilesImportPkgs(path, parentDirPath, module string, goFiles []string, pkgMap PkgMap) error {
 	if len(goFiles) == 0 {
 		return nil
 	}
@@ -145,8 +145,8 @@ func parseImports(content string) (pkgName string, imports []string, err error) 
 	return f.Name.String(), imports, nil
 }
 
-func ReadGoModule(root string) (string, error) {
-	goModPath := filepath.Join(root, "go.mod")
+func ReadGoModule(path string) (string, error) {
+	goModPath := filepath.Join(path, "go.mod")
 
 	file, err := os.Open(goModPath)
 	if err != nil {
