@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func PrintPkgImports(path, findPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
+func OutputDepGraph(path, findPkgName string, isShowStdLib, isShowThirdLib, isReverse, isModGraph bool) error {
 	if path == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -24,9 +24,14 @@ func PrintPkgImports(path, findPkgName string, showStdLib, showThirdLib, isRever
 	if module == "" {
 		return errors.New("error: the path must be a go module directory.")
 	}
-	if modGraph { //go mod graph tree
-		return OutputModGraph(os.Stdout, path, module, findPkgName, isReverse, true)
+	if isModGraph { //go mod graph tree
+		return outputModGraph(os.Stdout, path, module, findPkgName, isReverse, true)
+	} else {
+		return outputPkgImports(path, module, findPkgName, isShowStdLib, isShowThirdLib, isReverse)
 	}
+}
+
+func outputPkgImports(path, module, findPkgName string, isShowStdLib, isShowThirdLib, isReverse bool) error {
 	pkgMap := make(PkgMap)
 	if err := ReadDirImportPkgs(path, "", module, pkgMap); err != nil {
 		return err
@@ -62,10 +67,10 @@ func PrintPkgImports(path, findPkgName string, showStdLib, showThirdLib, isRever
 		fmt.Println(pkgName)
 		var selectDepPkgs []string
 		for depPkg, depPkgType := range depPkgs {
-			if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
+			if !isShowStdLib && depPkgType.PkgType == PkgTypeStandard {
 				continue
 			}
-			if !showThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
+			if !isShowThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
 				continue
 			}
 			selectDepPkgs = append(selectDepPkgs, depPkg)
@@ -82,7 +87,7 @@ func PrintPkgImports(path, findPkgName string, showStdLib, showThirdLib, isRever
 	return nil
 }
 
-func PrintPkgImportsGraphviz(path, showPkgName string, showStdLib, showThirdLib, reverse, modGraph bool, output string) error {
+func OutputDepGraphviz(path, findPkgName string, isShowStdLib, isShowThirdLib, isReverse, isModGraph bool, output string) error {
 	if output == "" {
 		return errors.New("error: output")
 	}
@@ -113,10 +118,11 @@ func PrintPkgImportsGraphviz(path, showPkgName string, showStdLib, showThirdLib,
 	}
 
 	var builder strings.Builder
-	if err := OutputGraphFormat(&builder, path, showPkgName, showStdLib, showThirdLib, reverse, modGraph); err != nil {
+	if err := OutputGraphFormat(&builder, path, findPkgName, isShowStdLib, isShowThirdLib, isReverse, isModGraph); err != nil {
 		return err
 	}
-	if format == "dot" {
+
+	if format == "dot" { //output dot file
 		file, err := os.Create(output)
 		if err != nil {
 			return errors.New("error create temp file")
@@ -127,7 +133,7 @@ func PrintPkgImportsGraphviz(path, showPkgName string, showStdLib, showThirdLib,
 			return fmt.Errorf("error write temp file: %v", err)
 		}
 		return nil
-	} else {
+	} else { //output a picture
 		file, err := os.CreateTemp("", "godepgraph-*.dot")
 		if err != nil {
 			return errors.New("error create temp file")

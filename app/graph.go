@@ -12,7 +12,7 @@ var (
 	cache PkgMap
 )
 
-func OutputGraphFormat(w io.Writer, path, showPkgName string, showStdLib, showThirdLib, isReverse, modGraph bool) error {
+func OutputGraphFormat(w io.Writer, path, findPkgName string, isShowStdLib, isShowThirdLib, isReverse, modGraph bool) error {
 	if path == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
@@ -25,9 +25,13 @@ func OutputGraphFormat(w io.Writer, path, showPkgName string, showStdLib, showTh
 		return err
 	}
 	if modGraph {
-		return OutputModGraph(w, path, module, showPkgName, isReverse, false)
+		return outputModGraph(w, path, module, findPkgName, isReverse, false)
+	} else {
+		return outputPkgGraph(w, path, module, findPkgName, isShowStdLib, isShowThirdLib, isReverse, modGraph)
 	}
+}
 
+func outputPkgGraph(w io.Writer, path, module, findPkgName string, isShowStdLib, isShowThirdLib, isReverse, modGraph bool) error {
 	//read cache first
 	var pkgMap PkgMap
 	if cache == nil {
@@ -51,16 +55,16 @@ edge [arrowsize="0.8"]
 	//reverse depencency
 	if isReverse {
 		//search pkg
-		if showPkgName == "" {
+		if findPkgName == "" {
 			return errors.New("pkg name required")
 		}
 		fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\" class=\"node_module\"];\n",
-			showPkgName,
-			showPkgName,
+			findPkgName,
+			findPkgName,
 		)
 		for pkgName, depPkgs := range pkgMap {
 			for depPkg := range depPkgs {
-				if showPkgName == depPkg {
+				if findPkgName == depPkg {
 					fmt.Fprintf(&b, "\"%s\" [label=\"%s\" fillcolor=\"white\" color=\"#0065FE\" fontcolor=\"#0065FE\" class=\"node_module\"];\n",
 						pkgName,
 						pkgName,
@@ -73,7 +77,7 @@ edge [arrowsize="0.8"]
 		//normal
 		labelsMap := make(map[string]string)
 		for pkgName, depPkgs := range pkgMap {
-			if showPkgName != "" && pkgName != showPkgName {
+			if findPkgName != "" && pkgName != findPkgName {
 				continue
 			}
 			if _, ok := labelsMap[pkgName]; !ok {
@@ -86,10 +90,10 @@ edge [arrowsize="0.8"]
 
 			if len(depPkgs) > 0 {
 				for depPkg, depPkgType := range depPkgs {
-					if !showStdLib && depPkgType.PkgType == PkgTypeStandard {
+					if !isShowStdLib && depPkgType.PkgType == PkgTypeStandard {
 						continue
 					}
-					if !showThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
+					if !isShowThirdLib && depPkgType.PkgType == PkgTypeThirdModule {
 						continue
 					}
 					if depPkgType.PkgType == PkgTypeCurrentModule {

@@ -165,7 +165,7 @@ func getPrintPrefix(node *ModuleGraphNode) []string {
 	return prefix
 }
 
-func OutputModGraph(w io.Writer, path, rootModule, findModule string, isReverse, isTreeStyle bool) error {
+func outputModGraph(w io.Writer, path, rootModule, findModule string, isReverse, isTreeStyle bool) error {
 	pkgMap, links, err := buildModGraphMap(path)
 	if err != nil {
 		return err

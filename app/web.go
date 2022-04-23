@@ -7,17 +7,17 @@ import (
 	"github.com/alovn/godepgraph/web"
 )
 
-func Serve(path, addr, findPkgName string, showStdLib, showThirdLib, reverse bool) error {
-	http.HandleFunc("/graph", graphHandler(path, findPkgName, showStdLib, showThirdLib, reverse))
+func Serve(path, addr, findPkgName string, isShowStdLib, isShowThirdLib, isReverse bool) error {
+	http.HandleFunc("/graph", graphHandler(path, findPkgName, isShowStdLib, isShowThirdLib, isReverse))
 	return web.Serve(addr)
 }
 
-func graphHandler(path, findPkgName string, showStdLib, showThirdLib, reverse bool) http.HandlerFunc {
+func graphHandler(path, findPkgName string, isShowStdLib, isShowThirdLib, isReverse bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		showStd := showStdLib
+		showStd := isShowStdLib
 		pkgName := findPkgName
-		showThird := showThirdLib
-		isReverse := reverse && pkgName != ""
+		showThird := isShowThirdLib
+		reverse := isReverse && pkgName != ""
 		isInit := r.URL.Query().Get("init") == "true"
 		mod := r.URL.Query().Get("mod") == "true"
 		if query := r.URL.Query().Get("std"); query != "" {
@@ -30,11 +30,11 @@ func graphHandler(path, findPkgName string, showStdLib, showThirdLib, reverse bo
 			pkgName = query
 		}
 		if query := r.URL.Query().Get("reverse"); query != "" {
-			isReverse = query == "true" && (pkgName != "" || mod)
+			reverse = query == "true" && (pkgName != "" || mod)
 		}
 		w.Header().Add("x-pkg", pkgName)
 		w.Header().Add("x-reverse", strconv.FormatBool(isReverse))
-		if err := OutputGraphFormat(w, path, pkgName, showStd, showThird, isReverse, mod); err != nil {
+		if err := OutputGraphFormat(w, path, pkgName, showStd, showThird, reverse, mod); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(err.Error()))
 		}
